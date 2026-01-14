@@ -16,7 +16,12 @@ function PaymentStatusContent() {
 
   useEffect(() => {
     const checkStatus = async () => {
-      const merchantTransactionId = searchParams.get('merchantTransactionId');
+      let merchantTransactionId = searchParams.get('merchantTransactionId');
+
+      // Fallback to session storage if not in URL
+      if (!merchantTransactionId) {
+        merchantTransactionId = sessionStorage.getItem('current_transaction_id');
+      }
 
       if (!merchantTransactionId) {
         setStatus('failure');
@@ -33,6 +38,7 @@ function PaymentStatusContent() {
         if (response.data?.status === 'SUCCESS' || response.data?.success === true) {
           setStatus('success');
           setMessage('Your payment was successful!');
+          sessionStorage.removeItem('current_transaction_id'); // Clear on success
         } else if (response.data?.status === 'PENDING') {
             setStatus('pending');
             setMessage('Payment is currently pending. Please check back later.');

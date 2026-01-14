@@ -87,16 +87,18 @@ export default function DashboardOverview() {
   const handlePayNow = async (transactionId) => {
     try {
       const res = await clubService.initiatePayment(transactionId);
-      // Assuming the API returns a redirect URL in 'data.url' or similar
-      // If it's a direct redirect from backend 302, axios might follow it automatically or return the final page
-      // If it returns a JSON with url:
-      if (res.data?.url) {
-        window.location.href = res.data.url;
+
+      const { payment_url, merchant_transaction_id } = res.data;
+
+      if (payment_url) {
+        // Store transaction ID for status page in case callback redirect is stripped of params
+        if (merchant_transaction_id) {
+          sessionStorage.setItem('current_transaction_id', merchant_transaction_id);
+        }
+        window.location.href = payment_url;
       } else {
-         console.log("Payment initiated:", res.data);
-         // Fallback if no URL provided (e.g. maybe it's a mock flow)
-         // We might need to redirect manually to our status page for testing if backend doesn't give a real gateway URL
-         // For now, assume a real flow or instructions provided in response
+         console.log("Payment initiated but no URL found:", res.data);
+         // Fallback or error handling
       }
     } catch (error) {
       console.error("Payment initiation failed:", error);
