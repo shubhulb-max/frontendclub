@@ -76,6 +76,27 @@ export default function DashboardOverview() {
     loadDashboardData();
   }, []);
 
+  const handlePayNow = async (transactionId) => {
+    try {
+      const res = await clubService.initiatePayment(transactionId);
+
+      const { payment_url, merchant_transaction_id } = res.data;
+
+      if (payment_url) {
+        // Store transaction ID for status page in case callback redirect is stripped of params
+        if (merchant_transaction_id) {
+          sessionStorage.setItem('current_transaction_id', merchant_transaction_id);
+        }
+        window.location.href = payment_url;
+      } else {
+         console.log("Payment initiated but no URL found:", res.data);
+         // Fallback or error handling
+      }
+    } catch (error) {
+      console.error("Payment initiation failed:", error);
+    }
+  };
+
   if (loading) {
     return <div className="p-8 text-center text-slate-500">Loading Dashboard...</div>;
   }
