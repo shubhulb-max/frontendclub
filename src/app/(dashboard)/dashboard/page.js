@@ -87,9 +87,9 @@ export default function DashboardOverview() {
   const handlePayNow = async (transactionId) => {
     try {
       const res = await clubService.initiatePayment(transactionId);
-
+      
       const { payment_url, merchant_transaction_id } = res.data;
-
+      
       if (payment_url) {
         // Store transaction ID for status page in case callback redirect is stripped of params
         if (merchant_transaction_id) {

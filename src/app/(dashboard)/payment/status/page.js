@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { clubService } from '@/services/clubService';
 import { Button } from "@/components/ui/button";
@@ -9,37 +8,29 @@ import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 function PaymentStatusContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const [status, setStatus] = useState('loading'); // loading, success, failure
   const [message, setMessage] = useState('Verifying payment status...');
-
+  const [ MerchantTransactionId, setMerchantTransactionId ] = useState(null);
   useEffect(() => {
     const checkStatus = async () => {
-      let merchantTransactionId = searchParams.get('merchantTransactionId');
+      setMerchantTransactionId(
+        sessionStorage.getItem('current_transaction_id')
+       )
 
-      // Fallback to session storage if not in URL
-      if (!merchantTransactionId) {
-        merchantTransactionId = sessionStorage.getItem('current_transaction_id');
-      }
-
-      if (!merchantTransactionId) {
+      if (!MerchantTransactionId) {
         setStatus('failure');
         setMessage('Invalid transaction ID.');
         return;
       }
 
       try {
-        const response = await clubService.checkPaymentStatus(merchantTransactionId);
+        const response = await clubService.checkPaymentStatus(MerchantTransactionId);
 
-        // Assuming response.data.status or similar indicates success/failure
-        // Adjust logic based on actual API response structure
-        // If the API returns a status string "SUCCESS", "FAILED", "PENDING"
-        if (response.data?.status === 'SUCCESS' || response.data?.success === true) {
+        if (response.data?.status == 'success' || response.data?.success === true) {
           setStatus('success');
           setMessage('Your payment was successful!');
           sessionStorage.removeItem('current_transaction_id'); // Clear on success
-        } else if (response.data?.status === 'PENDING') {
+        } else if (response.data?.status == 'PENDING') {
             setStatus('pending');
             setMessage('Payment is currently pending. Please check back later.');
         } else {
@@ -54,10 +45,10 @@ function PaymentStatusContent() {
     };
 
     checkStatus();
-  }, [searchParams]);
+  }, [MerchantTransactionId]);
 
   return (
-    <Card className="w-full max-w-md text-center">
+    <Card className="h-fit w-full max-w-md text-center">
       <CardHeader>
           <div className="flex justify-center mb-4">
               {status === 'loading' && <Loader2 className="h-16 w-16 text-blue-500 animate-spin" />}

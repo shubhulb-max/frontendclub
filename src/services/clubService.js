@@ -37,7 +37,8 @@ deleteInventoryItem: (id) => apiClient.delete(`api/inventory-items/${id}/`),
   // 5. Transactions (Financials)
   getTransactions: () => apiClient.get('api/transactions/'),
   initiatePayment: (transactionId) => apiClient.post('api/financials/initiate-payment/', { transaction_id: transactionId }),
-  checkPaymentStatus: (merchantTransactionId) => apiClient.post('api/financials/payment-callback/', { merchantTransactionId }),
+  checkPaymentStatus: (merchantTransactionId) =>
+    apiClient.post('api/financials/payment-callback/', { merchantTransactionId: merchantTransactionId }),
 
 
   recordTransaction: (data) => apiClient.post('api/transactions/', data),
