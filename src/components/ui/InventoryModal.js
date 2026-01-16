@@ -24,8 +24,9 @@ export default function InventoryModal({ open, onOpenChange, item, onSuccess }) 
     distributed_quantity: 0,
     missing_quantity: 0,
     destroyed_quantity: 0,
+    type: "",
     cost: "",
-    notes: ""
+    description: ""
   });
 
   useEffect(() => {
@@ -64,7 +65,8 @@ export default function InventoryModal({ open, onOpenChange, item, onSuccess }) 
         missing_quantity: item.missing_quantity ?? 0,
         destroyed_quantity: item.destroyed_quantity ?? 0,
         cost: item.cost || "",
-        notes: item.notes || ""
+        type: item.type || "",
+        description: item.description || ""
       });
     } else {
       setFormData({
@@ -75,8 +77,9 @@ export default function InventoryModal({ open, onOpenChange, item, onSuccess }) 
         distributed_quantity: 0,
         missing_quantity: 0,
         destroyed_quantity: 0,
+        type: "",
         cost: "",
-        notes: ""
+        description: ""
       });
     }
   }, [item, open]);
@@ -117,8 +120,9 @@ export default function InventoryModal({ open, onOpenChange, item, onSuccess }) 
         distributed_quantity: distributed,
         missing_quantity: missing,
         destroyed_quantity: destroyed,
+        type: formData.type,
         cost: formData.cost ? parseFloat(formData.cost) : 0,
-        notes: formData.notes
+        description: formData.description
       };
 
       if (item?.id) {
@@ -192,6 +196,15 @@ export default function InventoryModal({ open, onOpenChange, item, onSuccess }) 
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label>Type</Label>
+            <Input
+              placeholder="e.g. Match, Practice, Protective"
+              value={formData.type}
+              onChange={(e) => setFormData({...formData, type: e.target.value})}
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Available</Label>
@@ -243,11 +256,11 @@ export default function InventoryModal({ open, onOpenChange, item, onSuccess }) 
           </div>
 
           <div className="space-y-2">
-            <Label>Notes (e.g., Who has it?)</Label>
+            <Label>Description</Label>
             <Input 
-              placeholder="Assigned to Team A..."
-              value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              placeholder="Details about condition, usage, or assignment..."
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
             />
           </div>
 

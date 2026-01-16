@@ -78,7 +78,7 @@ export default function InventoryPage() {
               <TableHead>Distributed</TableHead>
               <TableHead>Missing</TableHead>
               <TableHead>Destroyed</TableHead>
-              <TableHead>Notes</TableHead>
+              <TableHead>Description</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -103,7 +103,7 @@ export default function InventoryPage() {
                   <TableCell>{item.missing_quantity ?? "-"}</TableCell>
                   <TableCell>{item.destroyed_quantity ?? "-"}</TableCell>
                   <TableCell className="text-sm text-slate-500 max-w-[200px] truncate">
-                    {item.notes || "-"}
+                    {item.description || "-"}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm" onClick={() => handleEdit(item)}>
