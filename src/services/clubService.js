@@ -31,6 +31,7 @@ newGround: (data) => apiClient.post('api/grounds/', data),
 deleteGround: (id) => apiClient.delete(`api/grounds/${id}/`),
 //inventory
 getInventory: () => apiClient.get('api/inventory-items/'),
+getInventoryCategories: () => apiClient.get('api/inventory-categories/'),
 createInventoryItem: (data) => apiClient.post('api/inventory-items/', data),
 updateInventoryItem: (id, data) => apiClient.put(`api/inventory-items/${id}/`, data),
 deleteInventoryItem: (id) => apiClient.delete(`api/inventory-items/${id}/`),

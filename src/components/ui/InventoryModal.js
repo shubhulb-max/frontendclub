@@ -14,27 +14,70 @@ import { clubService } from "@/services/clubService";
 
 export default function InventoryModal({ open, onOpenChange, item, onSuccess }) {
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    category: "equipment", 
+    category: "",
     quantity: 1,
-    status: "available", // Default status
+    available_quantity: "",
+    distributed_quantity: 0,
+    missing_quantity: 0,
+    destroyed_quantity: 0,
     cost: "",
     notes: ""
   });
 
   useEffect(() => {
+    if (!open) return;
+    const loadCategories = async () => {
+      setCategoriesLoading(true);
+      try {
+        const res = await clubService.getInventoryCategories();
+        setCategories(res.data || []);
+      } catch (error) {
+        console.error("Failed to load inventory categories", error);
+        setCategories([]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    loadCategories();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || item || categories.length === 0 || formData.category) return;
+    setFormData((prev) => ({ ...prev, category: String(categories[0].id) }));
+  }, [categories, open, item, formData.category]);
+
+  useEffect(() => {
     if (item) {
+      const categoryId =
+        item.category_detail?.id ??
+        (typeof item.category === "object" ? item.category?.id : item.category);
       setFormData({
         name: item.name || "",
-        category: item.category || "equipment",
+        category: categoryId ?? "",
         quantity: item.quantity || 1,
-        status: item.status || "available",
+        available_quantity: item.available_quantity ?? "",
+        distributed_quantity: item.distributed_quantity ?? 0,
+        missing_quantity: item.missing_quantity ?? 0,
+        destroyed_quantity: item.destroyed_quantity ?? 0,
         cost: item.cost || "",
         notes: item.notes || ""
       });
     } else {
-      setFormData({ name: "", category: "equipment", quantity: 1, status: "available", cost: "", notes: "" });
+      setFormData({
+        name: "",
+        category: "",
+        quantity: 1,
+        available_quantity: "",
+        distributed_quantity: 0,
+        missing_quantity: 0,
+        destroyed_quantity: 0,
+        cost: "",
+        notes: ""
+      });
     }
   }, [item, open]);
 
@@ -43,10 +86,39 @@ export default function InventoryModal({ open, onOpenChange, item, onSuccess }) 
     setLoading(true);
 
     try {
+      const toInt = (value) => {
+        const parsed = parseInt(value, 10);
+        return Number.isNaN(parsed) ? 0 : parsed;
+      };
+
+      const quantity = toInt(formData.quantity);
+      const distributed = toInt(formData.distributed_quantity);
+      const missing = toInt(formData.missing_quantity);
+      const destroyed = toInt(formData.destroyed_quantity);
+      let available = toInt(formData.available_quantity);
+
+      if (formData.available_quantity === "" || formData.available_quantity === null) {
+        const derived = quantity - distributed - missing - destroyed;
+        available = derived >= 0 ? derived : 0;
+      }
+
+      const categoryId = formData.category ? parseInt(formData.category, 10) : null;
+      if (!categoryId) {
+        toast.error("Please select a category");
+        setLoading(false);
+        return;
+      }
+
       const payload = {
-        ...formData,
-        quantity: parseInt(formData.quantity),
-        cost: formData.cost ? parseFloat(formData.cost) : 0
+        name: formData.name,
+        category: categoryId,
+        quantity,
+        available_quantity: available,
+        distributed_quantity: distributed,
+        missing_quantity: missing,
+        destroyed_quantity: destroyed,
+        cost: formData.cost ? parseFloat(formData.cost) : 0,
+        notes: formData.notes
       };
 
       if (item?.id) {
@@ -87,21 +159,29 @@ export default function InventoryModal({ open, onOpenChange, item, onSuccess }) 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select 
-                value={formData.category} 
+              <Select
+                value={formData.category ? String(formData.category) : ""}
                 onValueChange={(v) => setFormData({...formData, category: v})}
+                disabled={categoriesLoading || categories.length === 0}
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="equipment">Equipment</SelectItem>
-                  <SelectItem value="apparel">Apparel/Kit</SelectItem>
-                  <SelectItem value="medical">Medical</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  {categoriesLoading && (
+                    <SelectItem value="loading" disabled>Loading...</SelectItem>
+                  )}
+                  {!categoriesLoading && categories.length === 0 && (
+                    <SelectItem value="empty" disabled>No categories</SelectItem>
+                  )}
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={String(cat.id)}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Quantity</Label>
+              <Label>Total Quantity</Label>
               <Input 
                 type="number" 
                 min="1"
@@ -112,20 +192,44 @@ export default function InventoryModal({ open, onOpenChange, item, onSuccess }) 
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Current Status</Label>
-            <Select 
-              value={formData.status} 
-              onValueChange={(v) => setFormData({...formData, status: v})}
-            >
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="available">Available (In Stock)</SelectItem>
-                <SelectItem value="distributed">Distributed (In Use)</SelectItem>
-                <SelectItem value="damaged">Damaged / Destroyed</SelectItem>
-                <SelectItem value="missing">Missing / Lost</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Available</Label>
+              <Input
+                type="number"
+                min="0"
+                value={formData.available_quantity}
+                onChange={(e) => setFormData({...formData, available_quantity: e.target.value})}
+                placeholder="Auto-calc if blank"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Distributed</Label>
+              <Input
+                type="number"
+                min="0"
+                value={formData.distributed_quantity}
+                onChange={(e) => setFormData({...formData, distributed_quantity: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Missing</Label>
+              <Input
+                type="number"
+                min="0"
+                value={formData.missing_quantity}
+                onChange={(e) => setFormData({...formData, missing_quantity: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Destroyed</Label>
+              <Input
+                type="number"
+                min="0"
+                value={formData.destroyed_quantity}
+                onChange={(e) => setFormData({...formData, destroyed_quantity: e.target.value})}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

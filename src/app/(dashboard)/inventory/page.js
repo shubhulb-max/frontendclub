@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Package, AlertTriangle, Search, Plus, Archive, RotateCcw } from "lucide-react";
+import { Package, Search, Plus } from "lucide-react";
 
 export default function InventoryPage() {
   const [items, setItems] = useState([]);
@@ -32,26 +31,14 @@ export default function InventoryPage() {
     setIsModalOpen(true);
   };
 
-  // Helper to color-code status
-  const getStatusBadge = (status) => {
-    switch(status?.toLowerCase()) {
-      case 'available': 
-        return <Badge className="bg-green-600 hover:bg-green-700">Available</Badge>;
-      case 'distributed': 
-        return <Badge className="bg-blue-600 hover:bg-blue-700">Distributed</Badge>;
-      case 'missing': 
-        return <Badge variant="destructive">Missing</Badge>;
-      case 'damaged': 
-      case 'destroyed':
-        return <Badge variant="secondary" className="bg-gray-200 text-gray-700">Destroyed</Badge>;
-      default: 
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
+  const getCategoryName = (item) =>
+    item.category_detail?.name ||
+    item.category_name ||
+    (typeof item.category === "string" ? item.category : "");
 
   const filteredItems = items.filter(i => 
     i.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    i.status.toLowerCase().includes(searchTerm.toLowerCase())
+    getCategoryName(i).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -86,15 +73,18 @@ export default function InventoryPage() {
             <TableRow>
               <TableHead>Item Name</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead>Quantity</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Available</TableHead>
+              <TableHead>Distributed</TableHead>
+              <TableHead>Missing</TableHead>
+              <TableHead>Destroyed</TableHead>
               <TableHead>Notes</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredItems.length === 0 ? (
-               <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No items found.</TableCell></TableRow>
+               <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No items found.</TableCell></TableRow>
             ) : (
               filteredItems.map((item) => (
                 <TableRow key={item.id} className="hover:bg-slate-50/50">
@@ -104,11 +94,14 @@ export default function InventoryPage() {
                       {item.name}
                     </div>
                   </TableCell>
-                  <TableCell className="capitalize text-slate-600">{item.category}</TableCell>
+                  <TableCell className="text-slate-600">{getCategoryName(item) || "-"}</TableCell>
                   <TableCell>
                     <span className="font-bold">{item.quantity}</span>
                   </TableCell>
-                  <TableCell>{getStatusBadge(item.status)}</TableCell>
+                  <TableCell>{item.available_quantity ?? "-"}</TableCell>
+                  <TableCell>{item.distributed_quantity ?? "-"}</TableCell>
+                  <TableCell>{item.missing_quantity ?? "-"}</TableCell>
+                  <TableCell>{item.destroyed_quantity ?? "-"}</TableCell>
                   <TableCell className="text-sm text-slate-500 max-w-[200px] truncate">
                     {item.notes || "-"}
                   </TableCell>
